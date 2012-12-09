@@ -8,7 +8,7 @@
 using namespace std;
 
 #define PI 3.14159265359
-#define DELAYCONSTANT 2
+#define DELAYCONSTANT 0
 
 SDL_Surface *screen, *drawn;
 
@@ -22,7 +22,10 @@ typedef struct _Point {
 
 void set_pixel(SDL_Surface *surface, int x, int y, uint32_t colour)
 {
-    if (x < 1 || x >= surface->w || y < 1 || y >= surface->h) return;
+    if (x < 1 || x >= surface->w || y < 1 || y >= surface->h) {
+        fprintf(stderr, "Can't set pixel at %d,%d (off screen)", x, y);
+        return;
+    }
     switch (surface->format->BytesPerPixel) {
     case 4:
         for (int dy = -1; dy <= 0; ++dy)

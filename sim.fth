@@ -31,7 +31,7 @@
 ;
 
 : DEBUGPLOT ( x y -- )
-    ." +" . . CR
+    SWAP ." +" . . CR
 ;
 
 

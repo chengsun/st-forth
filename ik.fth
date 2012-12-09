@@ -63,11 +63,11 @@
 ;
 
 : FPRAD2DEG ( r -- d )
-    150 * FPPI /
+    180 * FPPI /
 ;
 
 : DEG2FPRAD ( d -- r )
-    FPPI * 150 /
+    FPPI * 180 /
 ;
 
 
@@ -99,18 +99,14 @@ VARIABLE THETA3
 : 2DKPOS ( d1 d2 d3 -- x y )
     0 0 >R >R
     DEG2FPRAD SWAP DEG2FPRAD ROT DEG2FPRAD      \ r3 r2 r1
-    DUP FPCOS R> R> 2 PICK + >R >R DROP DUP FPSIN R> + >R +
-    DUP FPCOS R> R> 2 PICK + >R >R DROP DUP FPSIN R> + >R +
-    DUP FPCOS R> R> 2 PICK + >R >R DROP FPSIN R> + R>
+    DUP FPCOS R> + >R DUP FPSIN R> R> ROT + >R >R +
+    DUP FPCOS R> + >R DUP FPSIN R> R> ROT + >R >R +
+    DUP FPCOS R> + >R FPSIN R> R> ROT +
 ;
 
 VARIABLE IKTHETA1
 VARIABLE IKTHETA2
 VARIABLE IKTHETA3
-VARIABLE IKBESTTHETA1
-VARIABLE IKBESTTHETA2
-VARIABLE IKBESTTHETA3
-VARIABLE IKBESTHYPOTSQR
 
 : 2DIKPOINTCBNOCHANGE -1 ;
 : 2DIKPOINTCBTHETA1+ IKTHETA1 @ 1+ IKTHETA1 ! 0 ;
@@ -192,7 +188,50 @@ VARIABLE IKBESTHYPOTSQR
     2DROP R>
 ;
 
-: MAINTEST
+VARIABLE IKBESTTHETA1
+VARIABLE IKBESTTHETA2
+VARIABLE IKBESTTHETA3
+
+: 2DIK ( x y -- t1 t2 t3 )
+    SIGNEDMAX
+
+    \ do 10 minima searches with random initial positions
+    1 0 DO
+        >R
+
+        RND 160 MOD 80 - IKTHETA1 !
+        RND 160 MOD 80 - IKTHETA2 !
+        RND 160 MOD 80 - IKTHETA3 !
+
+        BEGIN
+            2DUP 2DIKPOINTITER
+        UNTIL
+
+        2DUP
+        IKTHETA1 @ IKTHETA2 @ IKTHETA3 @
+        2DKPOS FPHYPOTSQR
+        R>
+        \ x y hs besths
+        2OVER < IF
+            DROP
+            IKTHETA1 @ IKBESTTHETA1 !
+            IKTHETA2 @ IKBESTTHETA2 !
+            IKTHETA3 @ IKBESTTHETA3 !
+        ELSE
+            SWAP DROP
+        THEN
+
+        \ break early if < 0.05 error
+        DUP 10 < IF LEAVE THEN
+    LOOP
+
+    2DROP DROP
+
+    \ return the best one
+    IKBESTTHETA1 @ IKBESTTHETA2 @ IKBESTTHETA3 @
+;
+
+: MAIN
     12345 SEED
     PENUP
     3000 0 DO
@@ -201,56 +240,28 @@ VARIABLE IKBESTHYPOTSQR
         DUP FPCOS 2 * SWAP FPSIN 3 *
         2DUP DEBUGPLOT
 
-        SIGNEDMAX IKBESTHYPOTSQR !
-
-        \ do 10 minima searches with random initial positions
-        10 0 DO
-            RND 160 MOD 80 - IKTHETA1 !
-            RND 160 MOD 80 - IKTHETA2 !
-            RND 160 MOD 80 - IKTHETA3 !
-
-            BEGIN
-                2DUP 2DIKPOINTITER
-            UNTIL
-
-            2DUP
-            IKTHETA1 @ IKTHETA2 @ IKTHETA3 @
-            2DKPOS FPHYPOTSQR
-            DUP IKBESTHYPOTSQR @ < IF
-                DUP IKBESTHYPOTSQR !
-                IKTHETA1 @ IKBESTTHETA1 !
-                IKTHETA2 @ IKBESTTHETA2 !
-                IKTHETA3 @ IKBESTTHETA3 !
-            THEN
-
-            \ break early if < 0.05 error
-            10 < IF LEAVE THEN
-        LOOP
+        \ inverse kinematics calculation
+        2DIK
 
         \ perform the best one
-        IKBESTTHETA1 @ SETTHETA1
-        IKBESTTHETA2 @ SETTHETA2
-        IKBESTTHETA3 @ SETTHETA3
-
+        SETTHETA3 SETTHETA2 SETTHETA1
         PENDOWN
         PENUP
-
-        2DROP
     LOOP
 ;
 
-: MAIN
+: MAINTEST
     12345 SEED
     PENUP
     
-    15000 15000 DEBUGPLOT
+    29000 -29000 DEBUGPLOT
     30 0 DO
         RND 160 MOD 80 - IKTHETA1 !
         RND 160 MOD 80 - IKTHETA2 !
         RND 160 MOD 80 - IKTHETA3 !
 
         BEGIN
-            15000 15000 2DIKPOINTITER
+            29000 -29000 2DIKPOINTITER
         UNTIL
 
         IKTHETA1 @ SETTHETA1
@@ -260,4 +271,3 @@ VARIABLE IKBESTHYPOTSQR
         PENUP
     LOOP
 ;
-
