@@ -1,0 +1,4 @@
+#!/bin/bash
+mkfifo fifo
+<fifo gforth-fast sim.fth ik.fth -e MAIN -e BYE | tee log | ./sim >fifo 2>/dev/null
+rm fifo

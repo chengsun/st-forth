@@ -1,36 +1,43 @@
 : TELL ;
 
-1 CONSTANT MOTOR1
-2 CONSTANT MOTOR2
-3 CONSTANT MOTOR3
+0 CONSTANT MOTOR1
+1 CONSTANT MOTOR2
+2 CONSTANT MOTOR3
 
 : MOVETO ( motor theta -- )
-    ." M" . ."  " .
-    KEY DROP
-;
-: MOVE ( motor theta -- )
-    ." D" . ."  " .
+    SWAP ." M" . . CR
     KEY DROP
 ;
 
-: START ( -- )
-    ." S"
+: PENDOWN
+    ." P1" CR
     KEY DROP
 ;
 
-: CALIBRATE ( -- )
-    ." C"
+: PENUP
+    ." P0" CR
     KEY DROP
 ;
+
+: DEBUG ( e-addr ulen -- )
+    ." *" TYPE CR
+;
+
+: DEBUGSTACK ( -- )
+    ." *" .S CR
+;
+
+: DEBUGPLOT ( x y -- )
+    ." +" . . CR
+;
+
 
 \ bv-forth
+: us 0 do loop ;
+
 
 VARIABLE RNDSTATE
-
-: SEED ( u -- )
-    RNDSTATE !
-;
-
+: SEED ( u -- ) RNDSTATE ! ;
 : RND ( -- u )
     RNDSTATE @
     1664525 UM* DROP 1013904223 +
