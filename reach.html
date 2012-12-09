@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+canvas {
+    background-color: white;
+}
+</style>
+</head>
+<body id="b">
+<canvas id="c" width="500" height="500">asdf</canvas>
+<p>
+Maximum angle either side (degs): <input id="mangle" type="text" onkeyup="mangle=parseInt(this.value,10)*Math.PI/180;" />
+</p><p>
+Angular resolution of each motor (degs): <input id="mres" type="text" onkeyup="mres=parseInt(this.value,10)*Math.PI/180;" />
+</p>
+<button onclick="update();">update</button>
+<script type="text/javascript">
+var c = document.getElementById('c');
+var ctx = c.getContext('2d');
+ctx.translate(0, c.height/2);
+ctx.scale(c.width/4,c.height/4);
+ctx.lineWidth = .01;
+
+mangle = 70*Math.PI/180;
+mres = 2*Math.PI/180;
+function update() {
+  ctx.clearRect(-2,-2,4,4);
+for (var angle = -mangle; angle <= mangle; angle += mres) {
+  ctx.strokeStyle = 'red';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(1*Math.cos(angle), 1*Math.sin(angle));
+  ctx.stroke();
+  ctx.strokeStyle = 'black';
+  ctx.beginPath();
+  ctx.arc(1*Math.cos(angle), 1*Math.sin(angle), 1, -mangle, mangle, false);
+  ctx.stroke();
+}
+}
+document.getElementById('mangle').value = 70;
+document.getElementById('mres').value = 2;
+update();
+</script>
+</body>
+</html>
+
