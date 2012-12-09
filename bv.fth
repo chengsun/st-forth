@@ -4,6 +4,14 @@
     TYPE
 ;
 
+: PENDOWN
+    GRIP
+;
+
+: PENUP
+    UNGRIP
+;
+
 \ START, but modified a bit
 
 250 max_position !
