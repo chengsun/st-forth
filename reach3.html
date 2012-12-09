@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+canvas {
+    background-color: white;
+}
+</style>
+</head>
+<body id="b">
+<canvas id="c" width="500" height="500">asdf</canvas>
+<p>
+Maximum angle either side (degs): <input id="mangle" type="text" onkeyup="mangle=parseInt(this.value,10)*Math.PI/180;" />
+</p><p>
+Angular resolution of each motor (degs): <input id="mres" type="text" onkeyup="mres=parseInt(this.value,10)*Math.PI/180;" />
+</p>
+<button onclick="update();">update</button>
+<script type="text/javascript">
+var c = document.getElementById('c');
+var ctx = c.getContext('2d');
+ctx.translate(c.width/2, c.height/2);
+ctx.scale(c.width/8,c.height/8);
+ctx.lineWidth = .01;
+
+mangle = 70*Math.PI/180;
+mres = 2*Math.PI/180;
+function update() {
+  ctx.clearRect(-4,-4,8,8);
+  ctx.strokeStyle = 'black';
+for (var angle = -mangle; angle <= mangle; angle += mres) {
+  var arm1endx=1*Math.cos(angle),
+ arm1endy= 1*Math.sin(angle);
+  /*
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(arm1endx,arm1endy);
+  ctx.stroke();
+  */
+for (var angle2 = -mangle+angle; angle2 <= mangle+angle; angle2 += mres) {
+  /*
+  ctx.beginPath();
+  ctx.moveTo(arm1endx,arm1endy);
+  ctx.lineTo(arm1endx+1*Math.cos(angle2),arm1endy+1*Math.sin(angle2));
+  ctx.stroke();
+  */
+  ctx.beginPath();
+  ctx.arc(arm1endx+1*Math.cos(angle2), arm1endy+1*Math.sin(angle2), 1, -mangle+angle2, mangle+angle2, false);
+  ctx.stroke();
+}
+}
+}
+document.getElementById('mangle').value = 70;
+document.getElementById('mres').value = 2;
+update();
+</script>
+</body>
+</html>
+
