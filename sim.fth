@@ -1,3 +1,6 @@
+\ code that is used on the simulation
+
+
 : TELL ;
 
 0 CONSTANT MOTOR1

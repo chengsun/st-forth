@@ -1,3 +1,5 @@
+\ code that is used on the actual robot
+
 : 2VARIABLE CREATE 2 CELLS ALLOT ;
 
 : DEBUG ( e-addr ulen -- )

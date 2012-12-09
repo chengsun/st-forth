@@ -1,3 +1,5 @@
+/* quick and hacky robot simulator */
+
 #include <SDL/SDL.h>
 #include <cstdio>
 #include <climits>

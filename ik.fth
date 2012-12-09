@@ -1,4 +1,13 @@
+\ INVERSE KINEMATICS
+\ the main file that tells the robot what to do
+\ this file doesn't care whether it is running as a
+\ simulation or on the actual robot. The two libraries
+\ bv.fth and sim.fth deal with those intricacies
+
+
+\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ fixed point (1/10000) stuff
+\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 31416 CONSTANT FPPI
 62832 CONSTANT FP2PI
@@ -62,7 +71,9 @@
 ;
 
 
+\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ motor stuff
+\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 2147483647 CONSTANT SIGNEDMAX
 
@@ -78,8 +89,11 @@ VARIABLE THETA3
 : SETTHETA3 DUP THETAOK? IF THETA3 ! TELL MOTOR3 THETA3 @ THETA2MOTOR MOVETO ELSE ABORT" THETA3 VALUE OVERFLOW" THEN ;
 
 
+\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ inverse kinematics (2d)
-\ the arm has length 10000
+\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+\ the arm has length 10000 (fixed point 1.0000)
 
 
 : 2DKPOS ( d1 d2 d3 -- x y )
@@ -178,7 +192,7 @@ VARIABLE IKBESTHYPOTSQR
     2DROP R>
 ;
 
-: MAINTESt
+: MAINTEST
     12345 SEED
     PENUP
     3000 0 DO
