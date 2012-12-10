@@ -195,8 +195,12 @@ VARIABLE IKBESTTHETA3
 : 2DIK ( x y -- t1 t2 t3 )
     SIGNEDMAX
 
+    SIGNEDMAX IKBESTTHETA1 !
+    SIGNEDMAX IKBESTTHETA2 !
+    SIGNEDMAX IKBESTTHETA3 !
+
     \ do 10 minima searches with random initial positions
-    1 0 DO
+    10 0 DO
         >R
 
         RND 160 MOD 80 - IKTHETA1 !
@@ -207,12 +211,15 @@ VARIABLE IKBESTTHETA3
             2DUP 2DIKPOINTITER
         UNTIL
 
+        ." *BEST IS"  IKTHETA1 @ . IKTHETA2 @ . IKTHETA3 @ . CR
+
         2DUP
         IKTHETA1 @ IKTHETA2 @ IKTHETA3 @
         2DKPOS FPHYPOTSQR
+        ." *THIS GIVES" DUP . CR
         R>
         \ x y hs besths
-        2OVER < IF
+        2DUP < IF
             DROP
             IKTHETA1 @ IKBESTTHETA1 !
             IKTHETA2 @ IKBESTTHETA2 !
@@ -221,18 +228,18 @@ VARIABLE IKBESTTHETA3
             SWAP DROP
         THEN
 
-        \ break early if < 0.05 error
+        \ break early if small error
         DUP 10 < IF LEAVE THEN
     LOOP
 
-    2DROP DROP
+    DROP 2DROP
 
     \ return the best one
     IKBESTTHETA1 @ IKBESTTHETA2 @ IKBESTTHETA3 @
 ;
 
 : MAIN
-    12345 SEED
+    1235 SEED
     PENUP
     3000 0 DO
         \ get a point to plot
@@ -243,7 +250,7 @@ VARIABLE IKBESTTHETA3
         \ inverse kinematics calculation
         2DIK
 
-        \ perform the best one
+        \ perform
         SETTHETA3 SETTHETA2 SETTHETA1
         PENDOWN
         PENUP
@@ -254,14 +261,14 @@ VARIABLE IKBESTTHETA3
     12345 SEED
     PENUP
     
-    29000 -29000 DEBUGPLOT
+    09000 -29000 DEBUGPLOT
     30 0 DO
         RND 160 MOD 80 - IKTHETA1 !
         RND 160 MOD 80 - IKTHETA2 !
         RND 160 MOD 80 - IKTHETA3 !
 
         BEGIN
-            29000 -29000 2DIKPOINTITER
+            09000 -29000 2DIKPOINTITER
         UNTIL
 
         IKTHETA1 @ SETTHETA1
