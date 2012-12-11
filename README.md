@@ -11,3 +11,7 @@ Key files
 * sim.cpp is a robot arm simulator and visualiser
 
 The other stuff are support files or libraries that ST have supplied us with
+
+---
+Developed for very Specific hardware, do not expect this to work with many commercial forth controlled servos
+(Not that many exist anywho).
