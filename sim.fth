@@ -51,11 +51,3 @@ VARIABLE THETA3
 \ bv-forth
 : us 0 do loop ;
 
-
-VARIABLE RNDSTATE
-: SEED ( u -- ) RNDSTATE ! ;
-: RND ( -- u )
-    RNDSTATE @
-    1664525 UM* DROP 1013904223 +
-    DUP RNDSTATE !
-;

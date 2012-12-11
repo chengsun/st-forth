@@ -7,6 +7,14 @@
 2147483647 CONSTANT SIGNEDMAX
 
 
+VARIABLE RRNDSTATE
+: RSEED ( u -- ) RRNDSTATE ! ;
+: RRND ( -- u )
+    RRNDSTATE @
+    1664525 UM* DROP 1013904223 +
+    DUP RRNDSTATE !
+;
+
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ fixed point (1/10000) stuff
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -57,11 +65,9 @@
 ;
 
 : FPHYPOTSQR ( x1 y1 x2 y2 -- h^2 )
-    ROT -               \ x1 x2 yd
-    DUP FP*             \ x1 x2 yd^2
-    ROT ROT -           \ yd^2 xd
-    DUP FP*             \ yd^2 xd^2
-    +                   \ xd^2+yd^2
+    ROT - DUP FP*       \ x1 x2 yd^2
+    >R - DUP FP*        \ xd^2          / yd^2
+    R> +
 ;
 
 : FPRAD2DEG ( r -- d )
@@ -186,9 +192,9 @@ VARIABLE IKBESTTHETA3
     10 0 DO
         >R
 
-        RND 160 MOD 80 - IKTHETA1 !
-        RND 160 MOD 80 - IKTHETA2 !
-        RND 160 MOD 80 - IKTHETA3 !
+        RRND 160 MOD 80 - IKTHETA1 !
+        RRND 160 MOD 80 - IKTHETA2 !
+        RRND 160 MOD 80 - IKTHETA3 !
 
         BEGIN
             2DUP 2DIKPOINTITER
@@ -221,13 +227,53 @@ VARIABLE IKBESTTHETA3
     IKBESTTHETA1 @ IKBESTTHETA2 @ IKBESTTHETA3 @
 ;
 
-: MAIN
-    1235 SEED
-    INIT
-    PENUP
+VARIABLE _2DIKLINEOLDSEED
+
+: 2DIKLINE ( x1 y1 x2 y2 -- )
+    RRNDSEED @ _2DIKLINEOLDSEED !
+
+    2OVER ROT SWAP - >R - R>        \ x1 y1 dx dy
+
+    3 1 DO
+        _2DIKLINEOLDSEED @ I + RSEED
+
+        2OVER
+        2DIK
+        IKTHETA3 ! IKTHETA2 ! IKTHETA1 !
+                                    \ x1 y1 dx dy
+        100 0 DO
+            2OVER                   \ x1 y1 dx dy x1 y1
+            ROT                     \ x1 y1 dx x1 y1 dy
+            I * 100 / +             \ x1 y1 dx x1 y
+            >R SWAP
+            I * 100 / +
+            R>                      \ x1 y1 x y
+
+            2DUP 2DIKPOINTITER
+            IF
+                \ couldn't improve at all
+                2DUP _2DIKLINELASTY ! _2DIKLINELASTX ! FPHYPOTSQR
+                3000 > IF
+                    \ and we've moved quite far (>0.1 lengths)
+                    \ give up, go back to the last good position and try again
+                THEN
+            ELSE
+                2DUP _2DIKLINELASTY ! _2DIKLINELASTX !
+                BEGIN
+                    2DUP 2DIKPOINTITER
+                UNTIL
+            THEN
+        LOOP
+    LOOP
+
+    _2DIKLINEOLDSEED @ RSEED
+;
+
+
+: TESTELLIPSE
     3000 0 DO
-        \ get a point to plot
-        RND FP2PI MOD
+        \ get a point on the ellipse to plot
+        RRND FP2PI MOD
         DUP FPCOS 2 * SWAP FPSIN 3 *
         2DUP DEBUGPLOT
 
@@ -241,16 +287,12 @@ VARIABLE IKBESTTHETA3
     LOOP
 ;
 
-: MAINTEST
-    12345 SEED
-    INIT
-    PENUP
-    
+: TESTPOINT
     09000 -29000 DEBUGPLOT
     30 0 DO
-        RND 160 MOD 80 - IKTHETA1 !
-        RND 160 MOD 80 - IKTHETA2 !
-        RND 160 MOD 80 - IKTHETA3 !
+        RRND 160 MOD 80 - IKTHETA1 !
+        RRND 160 MOD 80 - IKTHETA2 !
+        RRND 160 MOD 80 - IKTHETA3 !
 
         BEGIN
             09000 -29000 2DIKPOINTITER
@@ -262,6 +304,18 @@ VARIABLE IKBESTTHETA3
         PENDOWN
         PENUP
     LOOP
+;
+
+: TESTLINE
+    -10000 -20000 10000 20000
+;
+
+: MAIN 
+    12345 RSEED
+    INIT
+    PENUP
+
+    TESTLINE
 ;
 
 \ : MAINTEST3
