@@ -23,7 +23,7 @@ typedef struct _Point {
 void set_pixel(SDL_Surface *surface, int x, int y, uint32_t colour)
 {
     if (x < 1 || x >= surface->w || y < 1 || y >= surface->h) {
-        fprintf(stderr, "Can't set pixel at %d,%d (off screen)", x, y);
+        fprintf(stderr, "Can't set pixel at %d,%d (off screen)\n", x, y);
         return;
     }
     switch (surface->format->BytesPerPixel) {
@@ -104,12 +104,12 @@ Point get_endpoint(int mtheta[3]) {
 
 void update() {
     if (SDL_BlitSurface(drawn, NULL, screen, NULL) < 0) {
-        fprintf(stderr, "SDL blit failed (%s)", SDL_GetError());
+        fprintf(stderr, "SDL blit failed (%s)\n", SDL_GetError());
         exit(1);
     }
 
     if (SDL_LockSurface(screen) < 0) {
-        fprintf(stderr, "SDL lock screen failed (%s)", SDL_GetError());
+        fprintf(stderr, "SDL lock screen failed (%s)\n", SDL_GetError());
         return;
     }
     Point points[4] = {{300,300}};
@@ -137,7 +137,7 @@ void motor_move(int motor, int mtheta) {
             Point after = get_endpoint(gtheta);
             if (pen_state) {
                 if (SDL_LockSurface(drawn) < 0) {
-                    fprintf(stderr, "SDL lock screen failed (%s)", SDL_GetError());
+                    fprintf(stderr, "SDL lock screen failed (%s)\n", SDL_GetError());
                 } else {
                     draw_line(drawn, &before, &after, SDL_MapRGB(drawn->format, 0, 0, 0));
                     SDL_UnlockSurface(drawn);
@@ -189,7 +189,7 @@ int main() {
                 exit(1);
             }
             if (motor < 0 || motor > 2) {
-                fprintf(stderr, "Input stream: invalid motor number %d", motor);
+                fprintf(stderr, "Input stream: invalid motor number %d\n", motor);
                 exit(1);
             }
             fprintf(stderr, "Motor %d to %d\n", motor, mtheta);
