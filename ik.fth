@@ -4,6 +4,8 @@
 \ simulation or on the actual robot. The two libraries
 \ bv.fth and sim.fth deal with those intricacies
 
+2147483647 CONSTANT SIGNEDMAX
+
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ fixed point (1/10000) stuff
@@ -69,25 +71,6 @@
 : DEG2FPRAD ( d -- r )
     FPPI * 180 /
 ;
-
-
-\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-\ motor stuff
-\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-2147483647 CONSTANT SIGNEDMAX
-
-VARIABLE THETA1
-VARIABLE THETA2
-VARIABLE THETA3
-
-: THETA2MOTOR ( theta -- motor ) 80 + ;
-: THETAOK? ( theta -- flag ) DUP -81 > SWAP 81 < AND ;
-\ SETTHETAn ( theta -- )
-: SETTHETA1 DUP THETAOK? IF THETA1 ! TELL MOTOR1 THETA1 @ THETA2MOTOR MOVETO ELSE ABORT" THETA1 VALUE OVERFLOW" THEN ;
-: SETTHETA2 DUP THETAOK? IF THETA2 ! TELL MOTOR2 THETA2 @ THETA2MOTOR MOVETO ELSE ABORT" THETA2 VALUE OVERFLOW" THEN ;
-: SETTHETA3 DUP THETAOK? IF THETA3 ! TELL MOTOR3 THETA3 @ THETA2MOTOR MOVETO ELSE ABORT" THETA3 VALUE OVERFLOW" THEN ;
-
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ inverse kinematics (2d)
@@ -240,6 +223,7 @@ VARIABLE IKBESTTHETA3
 
 : MAIN
     1235 SEED
+    INIT
     PENUP
     3000 0 DO
         \ get a point to plot
@@ -259,6 +243,7 @@ VARIABLE IKBESTTHETA3
 
 : MAINTEST
     12345 SEED
+    INIT
     PENUP
     
     09000 -29000 DEBUGPLOT
@@ -278,3 +263,10 @@ VARIABLE IKBESTTHETA3
         PENUP
     LOOP
 ;
+
+\ : MAINTEST3
+\     80 -80 DO
+\         I SETTHETA1
+\         MOVEMOTORITER
+\     LOOP
+\ ;
