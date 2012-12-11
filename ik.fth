@@ -256,6 +256,7 @@ VARIABLE _2DIKLINEOLDSEED
                 3000 > IF
                     \ and we've moved quite far (>0.1 lengths)
                     \ give up, go back to the last good position and try again
+
                 THEN
             ELSE
                 2DUP _2DIKLINELASTY ! _2DIKLINELASTX !
