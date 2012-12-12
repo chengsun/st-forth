@@ -93,19 +93,19 @@ VARIABLE IKTHETA1
 VARIABLE IKTHETA2
 VARIABLE IKTHETA3
 
-: 2DIKPOINTCBNOCHANGE -1 ;
-: 2DIKPOINTCBTHETA1+ IKTHETA1 @ 1+ IKTHETA1 ! 0 ;
-: 2DIKPOINTCBTHETA1- IKTHETA1 @ 1- IKTHETA1 ! 0 ;
-: 2DIKPOINTCBTHETA2+ IKTHETA2 @ 1+ IKTHETA2 ! 0 ;
-: 2DIKPOINTCBTHETA2- IKTHETA2 @ 1- IKTHETA2 ! 0 ;
-: 2DIKPOINTCBTHETA3+ IKTHETA3 @ 1+ IKTHETA3 ! 0 ;
-: 2DIKPOINTCBTHETA3- IKTHETA3 @ 1- IKTHETA3 ! 0 ;
+: 2DIKCBNO -1 ;
+: 2DIKCB1+ IKTHETA1 @ 1+ IKTHETA1 ! 0 ;
+: 2DIKCB1- IKTHETA1 @ 1- IKTHETA1 ! 0 ;
+: 2DIKCB2+ IKTHETA2 @ 1+ IKTHETA2 ! 0 ;
+: 2DIKCB2- IKTHETA2 @ 1- IKTHETA2 ! 0 ;
+: 2DIKCB3+ IKTHETA3 @ 1+ IKTHETA3 ! 0 ;
+: 2DIKCB3- IKTHETA3 @ 1- IKTHETA3 ! 0 ;
 
 : 2DIKPOINTITER ( x y -- stopflag )
     2DUP
     IKTHETA1 @ IKTHETA2 @ IKTHETA3 @
     2DKPOS FPHYPOTSQR
-    ['] 2DIKPOINTCBNOCHANGE SWAP
+    ['] 2DIKCBNO SWAP
 
     \ callback best_score
 
@@ -115,7 +115,7 @@ VARIABLE IKTHETA3
         2DKPOS FPHYPOTSQR
         R> R> ROT   \ callback best_score this_score
         2DUP > IF
-            >R 2DROP ['] 2DIKPOINTCBTHETA1+ R>
+            >R 2DROP ['] 2DIKCB1+ R>
         ELSE DROP THEN
     ELSE 2DROP 2DROP DROP R> R> THEN
 
@@ -125,7 +125,7 @@ VARIABLE IKTHETA3
         2DKPOS FPHYPOTSQR
         R> R> ROT   \ callback best_score this_score
         2DUP > IF
-            >R 2DROP ['] 2DIKPOINTCBTHETA1- R>
+            >R 2DROP ['] 2DIKCB1- R>
         ELSE DROP THEN
     ELSE 2DROP 2DROP DROP R> R> THEN
 
@@ -135,7 +135,7 @@ VARIABLE IKTHETA3
         2DKPOS FPHYPOTSQR
         R> R> ROT   \ callback best_score this_score
         2DUP > IF
-            >R 2DROP ['] 2DIKPOINTCBTHETA2+ R>
+            >R 2DROP ['] 2DIKCB2+ R>
         ELSE DROP THEN
     ELSE 2DROP 2DROP DROP R> R> THEN
 
@@ -145,7 +145,7 @@ VARIABLE IKTHETA3
         2DKPOS FPHYPOTSQR
         R> R> ROT   \ callback best_score this_score
         2DUP > IF
-            >R 2DROP ['] 2DIKPOINTCBTHETA2- R>
+            >R 2DROP ['] 2DIKCB2- R>
         ELSE DROP THEN
     ELSE 2DROP 2DROP DROP R> R> THEN
 
@@ -155,7 +155,7 @@ VARIABLE IKTHETA3
         2DKPOS FPHYPOTSQR
         R> R> ROT   \ callback best_score this_score
         2DUP > IF
-            >R 2DROP ['] 2DIKPOINTCBTHETA3+ R>
+            >R 2DROP ['] 2DIKCB3+ R>
         ELSE DROP THEN
     ELSE 2DROP 2DROP DROP R> R> THEN
 
@@ -165,7 +165,7 @@ VARIABLE IKTHETA3
         2DKPOS FPHYPOTSQR
         R> R> ROT   \ callback best_score this_score
         2DUP > IF
-            >R 2DROP ['] 2DIKPOINTCBTHETA3- R>
+            >R 2DROP ['] 2DIKCB3- R>
         ELSE DROP THEN
     ELSE 2DROP 2DROP DROP R> R> THEN
 
@@ -196,12 +196,9 @@ VARIABLE IKBESTTHETA3
             2DUP 2DIKPOINTITER
         UNTIL
 
-        ." *BEST IS"  IKTHETA1 @ . IKTHETA2 @ . IKTHETA3 @ . CR
-
         2DUP
         IKTHETA1 @ IKTHETA2 @ IKTHETA3 @
         2DKPOS FPHYPOTSQR
-        ." *THIS GIVES" DUP . CR
         R>
         \ x y hs besths
         2DUP < IF
@@ -223,16 +220,16 @@ VARIABLE IKBESTTHETA3
     IKBESTTHETA1 @ IKBESTTHETA2 @ IKBESTTHETA3 @
 ;
 
-VARIABLE _2DIKLINEOLDSEED
-VARIABLE _2DIKLINELASTY
-VARIABLE _2DIKLINELASTX
+VARIABLE _2DIKOLDSEED
+VARIABLE _2DIKLASTY
+VARIABLE _2DIKLASTX
 
 : 2DIKLINE ( x1 y1 x2 y2 -- )
     RSEED @ _2DIKLINEOLDSEED !
 
     2OVER ROT SWAP - >R - R>        \ x1 y1 dx dy
 
-    3 1 DO
+    1 1 DO
         _2DIKLINEOLDSEED @ I + RSEED
 
         2OVER
@@ -250,14 +247,17 @@ VARIABLE _2DIKLINELASTX
             2DUP 2DIKPOINTITER
             IF
                 \ couldn't improve at all
-                2DUP _2DIKLINELASTY ! _2DIKLINELASTX ! FPHYPOTSQR
+                2DUP _2DIKLASTX @ _2DIKLASTY @ FPHYPOTSQR
                 3000 > IF
-                    \ and we've moved quite far (>0.1 lengths)
-                    \ give up, go back to the last good position and try again
-
+                    \ and we've tried moving quite far (>0.1 lengths)
+                    \ give up, go back to the last good position
+                    2DROP _2DIKLASTX @ _2DIKLASTY @
+                    \ find a new angle
+                    2DUP 2DIK
+                    \ add a penalty and try again
                 THEN
             ELSE
-                2DUP _2DIKLINELASTY ! _2DIKLINELASTX !
+                2DUP _2DIKLASTY ! _2DIKLASTX !
                 BEGIN
                     2DUP 2DIKPOINTITER
                 UNTIL
@@ -265,29 +265,32 @@ VARIABLE _2DIKLINELASTX
         LOOP
     LOOP
 
-    _2DIKLINEOLDSEED @ RSEED
+    _2DIKOLDSEED @ RSEED
 ;
 
 
 : TESTELLIPSE
-    3000 0 DO
+    10 0 DO
         \ get a point on the ellipse to plot
         RRND FP2PI MOD
         DUP FPCOS 2 * SWAP FPSIN 3 *
-        2DUP DEBUGPLOT
+        \ 2DUP DEBUGPLOT
 
         \ inverse kinematics calculation
         2DIK
 
         \ perform
-        SETTHETA3 SETTHETA2 SETTHETA1
-        PENDOWN
-        PENUP
+        \ SETTHETA3 SETTHETA2 SETTHETA1
+        \ PENDOWN
+        \ PENUP
+        DROP DROP DROP
+        
+        ." ITERATION " I . CR
     LOOP
 ;
 
 : TESTPOINT
-    09000 -29000 DEBUGPLOT
+    \ 09000 -29000 DEBUGPLOT
     30 0 DO
         RRND 160 MOD 80 - IKTHETA1 !
         RRND 160 MOD 80 - IKTHETA2 !
