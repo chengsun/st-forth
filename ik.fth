@@ -26,11 +26,11 @@ VARIABLE RRNDSTATE
 23562 CONSTANT FP3PI_4
 
 : FP* ( n1 n2 -- n )
-    * 10000 /
+    10000 */
 ;
 
 : FP/ ( n1 n2 -- n )
-    SWAP 10000 * SWAP /
+    10000 SWAP */
 ;
 
 : FPCOSLIM ( r -- n )
@@ -101,6 +101,9 @@ VARIABLE IKTHETA3
 : 2DIKCB3+ IKTHETA3 @ 1+ IKTHETA3 ! 0 ;
 : 2DIKCB3- IKTHETA3 @ 1- IKTHETA3 ! 0 ;
 
+
+\ takes a point and a set of motor positions in IKTHETAn, and tries to move
+\ one of the motors closer to the point
 : 2DIKPOINTITER ( x y -- stopflag )
     2DUP
     IKTHETA1 @ IKTHETA2 @ IKTHETA3 @
@@ -177,6 +180,7 @@ VARIABLE IKBESTTHETA1
 VARIABLE IKBESTTHETA2
 VARIABLE IKBESTTHETA3
 
+\ takes a point and gives a set of motor positions at the point
 : 2DIK ( x y -- t1 t2 t3 )
     SIGNEDMAX
 
@@ -221,56 +225,150 @@ VARIABLE IKBESTTHETA3
 ;
 
 VARIABLE _2DIKOLDSEED
-VARIABLE _2DIKLASTY
-VARIABLE _2DIKLASTX
+VARIABLE _2DIKLASTI
+VARIABLE _2DIKPERFORM
+VARIABLE _LINELENGTH
 
-: 2DIKLINE ( x1 y1 x2 y2 -- )
-    RSEED @ _2DIKLINEOLDSEED !
+\ takes a line and a starting point and tries to draw down the line as far as
+\ possible
+: 2DIKLINEPART ( x1 y1 dx dy jstart -- x1 y1 dx dy jend ) \ uses _LINELENGTH
+    >R                      \ stash jstart
 
-    2OVER ROT SWAP - >R - R>        \ x1 y1 dx dy
+    2OVER 2OVER
+    ROT SWAP                \ x1 dx y1 dy
+    R@ * _LINELENGTH @ / +   \ x1 dx y
+    ROT ROT                 \ y x1 dx
+    R@ * _LINELENGTH @ / +
+    SWAP                    \ x y
 
-    1 1 DO
-        _2DIKLINEOLDSEED @ I + RSEED
+    2DIK
+    IKTHETA3 ! IKTHETA2 ! IKTHETA1 !
+    _2DIKPERFORM @ IF
+        PENUP
+        IKTHETA1 @ SETTHETA1
+        IKTHETA2 @ SETTHETA2
+        IKTHETA3 @ SETTHETA3
+        PENDOWN
+    THEN
+    
+    BEGIN
+        R> 1+ >R
 
-        2OVER
-        2DIK
-        IKTHETA3 ! IKTHETA2 ! IKTHETA1 !
-                                    \ x1 y1 dx dy
-        100 0 DO
-            2OVER                   \ x1 y1 dx dy x1 y1
-            ROT                     \ x1 y1 dx x1 y1 dy
-            I * 100 / +             \ x1 y1 dx x1 y
-            >R SWAP
-            I * 100 / +
-            R>                      \ x1 y1 x y
+        R@ _LINELENGTH @ = IF
+            -1
+        ELSE
+            2OVER 2OVER             \ x1 y1 dx dy
+            ROT SWAP                \ x1 dx y1 dy
+            R@ * _LINELENGTH @ / +    \ x1 dx y
+            ROT ROT                 \ y x1 dx
+            R@ * _LINELENGTH @ / +
+            SWAP                    \ x y
 
             2DUP 2DIKPOINTITER
             IF
+                2DROP
                 \ couldn't improve at all
-                2DUP _2DIKLASTX @ _2DIKLASTY @ FPHYPOTSQR
-                3000 > IF
-                    \ and we've tried moving quite far (>0.1 lengths)
-                    \ give up, go back to the last good position
-                    2DROP _2DIKLASTX @ _2DIKLASTY @
-                    \ find a new angle
-                    2DUP 2DIK
-                    \ add a penalty and try again
+                R@ _2DIKLASTI @ - 5 > IF
+                    \ we've tried moving quite far (5*0.02 of the
+                    \ length of an arm), so give up
+                    R> 5 - >R
+                    -1
+                ELSE
+                    0
                 THEN
             ELSE
-                2DUP _2DIKLASTY ! _2DIKLASTX !
+                R@ _2DIKLASTI !
+                _2DIKPERFORM @ IF
+                    IKTHETA1 @ SETTHETA1
+                    IKTHETA2 @ SETTHETA2
+                    IKTHETA3 @ SETTHETA3
+                THEN
                 BEGIN
                     2DUP 2DIKPOINTITER
+                    _2DIKPERFORM @ IF
+                        IKTHETA1 @ SETTHETA1
+                        IKTHETA2 @ SETTHETA2
+                        IKTHETA3 @ SETTHETA3
+                    THEN
                 UNTIL
+                IKTHETA1 @ IKTHETA2 @ IKTHETA3 @ 2DKPOS FPHYPOTSQR 40 > IF
+                    \ too much error
+                    -1
+                ELSE
+                    0
+                THEN
             THEN
-        LOOP
+        THEN
+    UNTIL
+
+    R>
+;
+
+VARIABLE _2DIKLBSEED
+VARIABLE _BESTSCORE
+VARIABLE _CURSCORE
+
+: 2DIKLINE ( x1 y1 x2 y2 -- bestseed )
+    RRNDSTATE @ _2DIKOLDSEED !
+
+    2OVER 2OVER FPHYPOTSQR 200 / _LINELENGTH ! \ store the line length
+    2OVER ROT SWAP - >R - R>        \ x1 y1 dx dy
+
+    _LINELENGTH @ 10 / 3 + _BESTSCORE !
+    0 _2DIKPERFORM !
+
+    6 1 DO
+        ." * DOING ITERATION " I . CR
+        _2DIKOLDSEED @ I + RSEED
+
+        0 _CURSCORE !        \ reset the current score
+        0                   \ set the current position along the line
+        BEGIN
+            \ x1 y1 dx dy jmax jstart
+            _CURSCORE @ 1+ DUP _CURSCORE !    \ increment the current score
+            _BESTSCORE = IF
+                \ bail out early if we've had to change 3 times
+                -1
+            ELSE
+                2DIKLINEPART ( x1 y1 dx dy jstart -- x1 y1 dx dy jend )
+                DUP _LINELENGTH @ =
+            THEN
+        UNTIL
+        DROP
+
+        _CURSCORE @ _BESTSCORE @ < IF
+            _CURSCORE @ _BESTSCORE !
+            _2DIKOLDSEED @ I + _2DIKLBSEED !
+        THEN
     LOOP
 
+    _2DIKLBSEED @ RSEED
+    ." * BEST IS " _2DIKLBSEED @ _2DIKOLDSEED @ - .  ." WITH " _BESTSCORE @ . CR
+    -1 _2DIKPERFORM !
+
+    0 _CURSCORE !        \ reset the current score
+    0        \ set the current position along the line
+    BEGIN
+        _CURSCORE @ 1+ DUP _CURSCORE !    \ increment the current score
+        _BESTSCORE = IF
+            \ bail out early if we've had to change 3 times
+            -1
+        ELSE
+            2DIKLINEPART ( x1 y1 dx dy jstart -- x1 y1 dx dy jend )
+            DUP _LINELENGTH @ =
+        THEN
+    UNTIL
+    DROP
+
+    2DROP 2DROP \ drop x1 y1 dx dy
+
+    PENUP
     _2DIKOLDSEED @ RSEED
 ;
 
 
 : TESTELLIPSE
-    10 0 DO
+    100 0 DO
         \ get a point on the ellipse to plot
         RRND FP2PI MOD
         DUP FPCOS 2 * SWAP FPSIN 3 *
@@ -280,12 +378,11 @@ VARIABLE _2DIKLASTX
         2DIK
 
         \ perform
-        \ SETTHETA3 SETTHETA2 SETTHETA1
-        \ PENDOWN
-        \ PENUP
-        DROP DROP DROP
+        SETTHETA3 SETTHETA2 SETTHETA1
+        PENDOWN
+        PENUP
         
-        ." ITERATION " I . CR
+        ." * ITERATION " I . CR
     LOOP
 ;
 
@@ -309,7 +406,32 @@ VARIABLE _2DIKLASTX
 ;
 
 : TESTLINE
-    -10000 -20000 10000 20000
+    25000 -20000 15000 -20000 2DIKLINE
+    20000 -20000 20000 -15000 2DIKLINE
+    25000 -15000 15000 -15000 2DIKLINE
+
+    25000 -12000 15000 -12000 2DIKLINE
+    25000 -12000 25000 -08000 2DIKLINE
+    20000 -12000 20000 -08000 2DIKLINE
+    15000 -12000 15000 -08000 2DIKLINE
+
+    25000 -05000 15000 -05000 2DIKLINE
+    15000 -05000 15000 -00000 2DIKLINE
+
+    25000 02000 15000 02000 2DIKLINE
+    15000 02000 15000 07000 2DIKLINE
+
+    25000 10000 15000 10000 2DIKLINE
+    15000 10000 15000 15000 2DIKLINE
+    25000 10000 25000 15000 2DIKLINE
+    25000 15000 15000 15000 2DIKLINE
+
+    25000 17000 18000 17000 2DIKLINE
+    15000 17000 2DIK SETTHETA3 SETTHETA2 SETTHETA1 PENDOWN PENUP
+
+    13000 -20000 13000 20000 2DIKLINE
+
+    0 0 2DIK SETTHETA3 SETTHETA2 SETTHETA1
 ;
 
 : MAIN 
@@ -317,7 +439,7 @@ VARIABLE _2DIKLASTX
     INIT
     PENUP
 
-    TESTELLIPSE
+    TESTLINE
 ;
 
 \ : MAINTEST3

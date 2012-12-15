@@ -8,13 +8,13 @@
 using namespace std;
 
 #define PI 3.14159265359
-#define DELAYCONSTANT 0
+#define DELAYCONSTANT 1
 
 SDL_Surface *screen, *drawn;
 
 int gtheta[3] = {0,0,0};
 bool pen_state = false;
-int debugplotx, debugploty;
+int debugplotx=1, debugploty=1;
 
 typedef struct _Point {
     float x, y;
@@ -127,33 +127,31 @@ void motor_move(int motor, int mtheta) {
     mtheta -= 80;
     if (mtheta < -80) mtheta = -80;
     if (mtheta > 80) mtheta = 80;
-    if (DELAYCONSTANT) {
-        while (1) {
-            int mdelta = mtheta - gtheta[motor];
-            if (mdelta == 0) break;
-            int mstep = mdelta < 0 ? -1 : +1;
-            Point before = get_endpoint(gtheta);
-            gtheta[motor] += mstep;
-            Point after = get_endpoint(gtheta);
-            if (pen_state) {
-                if (SDL_LockSurface(drawn) < 0) {
-                    fprintf(stderr, "SDL lock screen failed (%s)\n", SDL_GetError());
-                } else {
-                    draw_line(drawn, &before, &after, SDL_MapRGB(drawn->format, 0, 0, 0));
-                    SDL_UnlockSurface(drawn);
-                }
+    while (1) {
+        int mdelta = mtheta - gtheta[motor];
+        if (mdelta == 0) break;
+        int mstep = mdelta < 0 ? -1 : +1;
+        Point before = get_endpoint(gtheta);
+        gtheta[motor] += mstep;
+        Point after = get_endpoint(gtheta);
+        if (pen_state) {
+            if (SDL_LockSurface(drawn) < 0) {
+                fprintf(stderr, "SDL lock screen failed (%s)\n", SDL_GetError());
+            } else {
+                draw_line(drawn, &before, &after, SDL_MapRGB(drawn->format, 0, 0, 0));
+                SDL_UnlockSurface(drawn);
             }
+        }
+        if (DELAYCONSTANT) {
             update();
             SDL_Delay(1*DELAYCONSTANT);
         }
-    } else {
-        gtheta[motor] = mtheta;
-        update();
     }
     SDL_Delay(10*DELAYCONSTANT);
 }
 
 int main() {
+    fprintf(stderr, "Started\n");
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL init failed (%s)\n" , SDL_GetError());
         exit(1);
@@ -220,7 +218,11 @@ int main() {
             break;
         }
         case '*': {
-            while (getchar() != '\n');
+            int comment;
+            do {
+                comment = getchar();
+                fprintf(stderr, "%c", comment);
+            } while (comment != '\n');
             break;
         }
         case '+': {
